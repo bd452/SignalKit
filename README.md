@@ -88,6 +88,12 @@ swift test
 swift build
 ```
 
+## Documentation
+
+Full usage and API reference: **[docs/](docs/README.md)**
+
+Example projects and patterns: **[docs/examples/](docs/examples/README.md)**
+
 ## Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed design overview — mounting model, lifecycle scopes, observer delivery, binding vs observation, and structural hosts.
