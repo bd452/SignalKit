@@ -96,9 +96,9 @@ enum NodeMounter {
     static func flattenChildren(_ node: Node) -> [Node] {
         switch node.content {
         case .fragment(let children):
-            return children
+            return children.flatMap { flattenChildren($0) }
         case .component(let component as ArrayComponent):
-            return component.nodes
+            return component.nodes.flatMap { flattenChildren($0) }
         default:
             return [node]
         }

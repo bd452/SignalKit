@@ -400,6 +400,123 @@ struct ComponentTests {
 
         #expect(flag.didUnmount)
     }
+
+    @Test
+    func vStackFlattensForLoopWithStaticSibling() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                let label = UILabel()
+                label.text = title
+                return label.node
+            }
+        }
+
+        final class Host: Component {
+            let titles = ["A", "B"]
+            override func build() -> Node {
+                VStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        let root = host.mount()
+        let stack = root as! UIStackView
+        #expect(stack.arrangedSubviews.count == 3)
+        #expect((stack.arrangedSubviews[0] as! UILabel).text == "Header")
+        #expect((stack.arrangedSubviews[1] as! UILabel).text == "A")
+        #expect((stack.arrangedSubviews[2] as! UILabel).text == "B")
+        host.unmount()
+    }
+
+    @Test
+    func hStackFlattensForLoopWithStaticSibling() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                let label = UILabel()
+                label.text = title
+                return label.node
+            }
+        }
+
+        final class Host: Component {
+            let titles = ["A", "B"]
+            override func build() -> Node {
+                HStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        let root = host.mount()
+        let stack = root as! UIStackView
+        #expect(stack.arrangedSubviews.count == 3)
+        #expect((stack.arrangedSubviews[0] as! UILabel).text == "Header")
+        #expect((stack.arrangedSubviews[1] as! UILabel).text == "A")
+        #expect((stack.arrangedSubviews[2] as! UILabel).text == "B")
+        host.unmount()
+    }
+
+    @Test
+    func slotChildCanUseForLoopInVStack() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                let label = UILabel()
+                label.text = title
+                return label.node
+            }
+        }
+
+        final class ListSection: Component {
+            let titles: [String]
+            init(_ titles: [String]) { self.titles = titles }
+            override func build() -> Node {
+                VStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        final class Host: Component {
+            let titles = Signal<[String]?>(nil)
+            override func build() -> Node {
+                Slot(titles) { titles in
+                    if let titles {
+                        ListSection(titles)
+                    } else {
+                        EmptyComponent()
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        _ = host.mount()
+
+        host.titles.set(["A", "B"])
+        let slotContainer = host.rootView!
+        let stack = slotContainer.subviews.first as! UIStackView
+        #expect(stack.arrangedSubviews.count == 3)
+
+        host.unmount()
+    }
 }
 #endif
 
@@ -409,6 +526,117 @@ import AppKit
 @Suite(.serialized)
 @MainActor
 struct MacComponentTests {
+    @Test
+    func vStackFlattensForLoopWithStaticSibling() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                NSTextField(labelWithString: title).node
+            }
+        }
+
+        final class Host: Component {
+            let titles = ["A", "B"]
+            override func build() -> Node {
+                VStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        let root = host.mount()
+        let stack = root as! NSStackView
+        #expect(stack.arrangedSubviews.count == 3)
+        #expect((stack.arrangedSubviews[0] as! NSTextField).stringValue == "Header")
+        #expect((stack.arrangedSubviews[1] as! NSTextField).stringValue == "A")
+        #expect((stack.arrangedSubviews[2] as! NSTextField).stringValue == "B")
+        host.unmount()
+    }
+
+    @Test
+    func hStackFlattensForLoopWithStaticSibling() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                NSTextField(labelWithString: title).node
+            }
+        }
+
+        final class Host: Component {
+            let titles = ["A", "B"]
+            override func build() -> Node {
+                HStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        let root = host.mount()
+        let stack = root as! NSStackView
+        #expect(stack.arrangedSubviews.count == 3)
+        #expect((stack.arrangedSubviews[0] as! NSTextField).stringValue == "Header")
+        #expect((stack.arrangedSubviews[1] as! NSTextField).stringValue == "A")
+        #expect((stack.arrangedSubviews[2] as! NSTextField).stringValue == "B")
+        host.unmount()
+    }
+
+    @Test
+    func slotChildCanUseForLoopInVStack() {
+        final class Row: Component {
+            let title: String
+            init(_ title: String) { self.title = title }
+            override func build() -> Node {
+                NSTextField(labelWithString: title).node
+            }
+        }
+
+        final class ListSection: Component {
+            let titles: [String]
+            init(_ titles: [String]) { self.titles = titles }
+            override func build() -> Node {
+                VStack(spacing: 4) {
+                    Row("Header")
+                    for title in titles {
+                        Row(title)
+                    }
+                }
+            }
+        }
+
+        final class Host: Component {
+            let titles = Signal<[String]?>(nil)
+            override func build() -> Node {
+                Slot(titles) { titles in
+                    if let titles {
+                        ListSection(titles)
+                    } else {
+                        EmptyComponent()
+                    }
+                }
+            }
+        }
+
+        let host = Host()
+        _ = host.mount()
+
+        host.titles.set(["A", "B"])
+        let slotContainer = host.rootView!
+        let stack = slotContainer.subviews.first as! NSStackView
+        #expect(stack.arrangedSubviews.count == 3)
+
+        host.unmount()
+    }
+
     @Test
     func mountsVerticalStackOnMacOS() {
         final class Host: Component {
