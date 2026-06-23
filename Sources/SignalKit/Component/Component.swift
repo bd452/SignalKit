@@ -121,18 +121,23 @@ open class Component: NSObject {
             )
         }
         let owner = String(describing: type(of: self))
-        let disposable = observeMultiSignal(
-            repeat each signals,
-            on: .main,
-            fireImmediately: fireImmediately,
-            wrapInvoke: { invoke in
-                { [weak self] in
-                    guard let self, let scope = self.scope else { return }
-                    scope.guardAlive(owner: owner, invoke)
-                }
-            },
-            handler
-        )
+        let disposable: any Disposable
+        if #available(macOS 14, iOS 17, macCatalyst 17, *) {
+            disposable = observeMultiSignal(
+                repeat each signals,
+                on: .main,
+                fireImmediately: fireImmediately,
+                wrapInvoke: { invoke in
+                    { [weak self] in
+                        guard let self, let scope = self.scope else { return }
+                        scope.guardAlive(owner: owner, invoke)
+                    }
+                },
+                handler
+            )
+        } else {
+            fatalError("Multi-signal observe requires macOS 14 / iOS 17 or newer")
+        }
         return scope.track(disposable)
     }
 
