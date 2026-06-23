@@ -77,6 +77,18 @@ observe(user) { user in
 }
 ```
 
+When a side effect depends on more than one signal, pass them all — the handler runs whenever **any** of them changes, with each signal's current value:
+
+```swift
+observe(firstName, lastName) { first, last in
+    fullNameLabel.text = "\(first) \(last)"
+}
+
+observe(price, quantity, discount) { price, qty, discount in
+    totalLabel.text = formatTotal(price: price, quantity: qty, discount: discount)
+}
+```
+
 ### fireImmediately
 
 Defaults to `true`. The handler runs once immediately with `signal.current`, then on every subsequent change:
@@ -134,6 +146,17 @@ track(signal.observe { value in
     // custom logic
 })
 ```
+
+For side effects that depend on multiple signals, use the module-level `observe` overload:
+
+```swift
+let disposable = observe(count, label, fireImmediately: false) { count, label in
+    print("\(label): \(count)")
+}
+disposable.dispose()
+```
+
+The handler runs whenever **any** of the signals changes, receiving the current value from each.
 
 ### Delivery modes
 
@@ -238,6 +261,16 @@ func observe<Value>(
     fireImmediately: Bool = true,
     _ handler: @escaping (Value) -> Void
 ) -> any Disposable
+
+@discardableResult
+func observe<A, B>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B) -> Void
+) -> any Disposable
+
+// ...and similarly through ten signals.
 ```
 
 ## Related
