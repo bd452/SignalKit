@@ -64,6 +64,50 @@ func signalCoalescesNestedWritesDuringDelivery() {
     #expect(received == [1, 3])
 }
 
+@Test @MainActor
+func multiSignalObserveFiresOnAnyChange() {
+    let a = Signal(1)
+    let b = Signal("x")
+    var received: [(Int, String)] = []
+    let disposable = observe(a, b, fireImmediately: false) { received.append(($0, $1)) }
+
+    a.set(2)
+    #expect(received == [(2, "x")])
+
+    b.set("y")
+    #expect(received == [(2, "x"), (2, "y")])
+
+    disposable.dispose()
+    a.set(3)
+    b.set("z")
+    #expect(received == [(2, "x"), (2, "y")])
+}
+
+@Test @MainActor
+func multiSignalObserveFiresImmediately() {
+    let a = Signal(1)
+    let b = Signal("x")
+    var received: [(Int, String)] = []
+    _ = observe(a, b) { received.append(($0, $1)) }
+
+    #expect(received == [(1, "x")])
+}
+
+@Test @MainActor
+func multiSignalObservePassesAllCurrentValues() {
+    let a = Signal(1)
+    let b = Signal(2)
+    let c = Signal(3)
+    var received: [(Int, Int, Int)] = []
+    _ = observe(a, b, c, fireImmediately: false) { received.append(($0, $1, $2)) }
+
+    b.set(20)
+    #expect(received == [(1, 20, 3)])
+
+    a.set(10)
+    #expect(received == [(1, 20, 3), (10, 20, 3)])
+}
+
 #if canImport(UIKit)
 import UIKit
 
@@ -375,6 +419,36 @@ struct ComponentTests {
         host.unmount()
         host.value.set(2)
         #expect(host.observationCount == 2)
+    }
+
+    @Test
+    func multiSignalObserveStopsAfterUnmount() {
+        final class Host: Component {
+            let a = Signal(1)
+            let b = Signal("x")
+            var observationCount = 0
+            override func build() -> Node {
+                observe(a, b) { [self] _, _ in
+                    observationCount += 1
+                }
+                return UILabel().node
+            }
+        }
+
+        let host = Host()
+        host.mount()
+        #expect(host.observationCount == 1)
+
+        host.a.set(2)
+        #expect(host.observationCount == 2)
+
+        host.b.set("y")
+        #expect(host.observationCount == 3)
+
+        host.unmount()
+        host.a.set(3)
+        host.b.set("z")
+        #expect(host.observationCount == 3)
     }
 
     @Test

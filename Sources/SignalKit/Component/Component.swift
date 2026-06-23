@@ -106,6 +106,98 @@ open class Component: NSObject {
         return scope.track(disposable)
     }
 
+    /// Runs a side effect whenever any of the given signals changes.
+    ///
+    /// The handler receives the latest value from every signal, not only the one that changed.
+    @discardableResult
+    public func observe<A, B>(
+        _ a: Signal<A>,
+        _ b: Signal<B>,
+        fireImmediately: Bool = true,
+        _ handler: @escaping (A, B) -> Void
+    ) -> any Disposable {
+        guard let scope else {
+            preconditionFailure(
+                "observe(_:_:_:) must be called from build() while the component is mounting"
+            )
+        }
+        let owner = String(describing: type(of: self))
+        let run: (A, B) -> Void = { [weak self] valA, valB in
+            guard let self, let scope = self.scope else { return }
+            scope.guardAlive(owner: owner) {
+                handler(valA, valB)
+            }
+        }
+        if fireImmediately {
+            scope.guardAlive(owner: owner) {
+                handler(a.current, b.current)
+            }
+        }
+        let disposable = SignalKit.observe(a, b, on: .main, fireImmediately: false, run)
+        return scope.track(disposable)
+    }
+
+    /// Runs a side effect whenever any of the given signals changes.
+    @discardableResult
+    public func observe<A, B, C>(
+        _ a: Signal<A>,
+        _ b: Signal<B>,
+        _ c: Signal<C>,
+        fireImmediately: Bool = true,
+        _ handler: @escaping (A, B, C) -> Void
+    ) -> any Disposable {
+        guard let scope else {
+            preconditionFailure(
+                "observe(_:_:_:_:) must be called from build() while the component is mounting"
+            )
+        }
+        let owner = String(describing: type(of: self))
+        let run: (A, B, C) -> Void = { [weak self] valA, valB, valC in
+            guard let self, let scope = self.scope else { return }
+            scope.guardAlive(owner: owner) {
+                handler(valA, valB, valC)
+            }
+        }
+        if fireImmediately {
+            scope.guardAlive(owner: owner) {
+                handler(a.current, b.current, c.current)
+            }
+        }
+        let disposable = SignalKit.observe(a, b, c, on: .main, fireImmediately: false, run)
+        return scope.track(disposable)
+    }
+
+    /// Runs a side effect whenever any of the given signals changes.
+    @discardableResult
+    public func observe<A, B, C, D>(
+        _ a: Signal<A>,
+        _ b: Signal<B>,
+        _ c: Signal<C>,
+        _ d: Signal<D>,
+        fireImmediately: Bool = true,
+        _ handler: @escaping (A, B, C, D) -> Void
+    ) -> any Disposable {
+        guard let scope else {
+            preconditionFailure(
+                "observe(_:_:_:_:_:) must be called from build() while the component is mounting"
+            )
+        }
+        let owner = String(describing: type(of: self))
+        let run: (A, B, C, D) -> Void = { [weak self] valA, valB, valC, valD in
+            guard let self, let scope = self.scope else { return }
+            scope.guardAlive(owner: owner) {
+                handler(valA, valB, valC, valD)
+            }
+        }
+        if fireImmediately {
+            scope.guardAlive(owner: owner) {
+                handler(a.current, b.current, c.current, d.current)
+            }
+        }
+        let disposable = SignalKit.observe(a, b, c, d, on: .main, fireImmediately: false, run)
+        return scope.track(disposable)
+    }
+
     @discardableResult
     public func bind<Target: AnyObject, Value>(
         _ target: Target,
