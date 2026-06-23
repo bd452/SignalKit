@@ -34,6 +34,7 @@ func subscribeToSignals<each Value>(
 ///
 /// The handler receives the latest value from every signal, not only the one that changed.
 /// Returns a `Disposable` that unsubscribes from all signals.
+@MainActor
 @discardableResult
 public func observe<each Value>(
     _ signals: repeat Signal<each Value>,
