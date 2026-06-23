@@ -69,7 +69,7 @@ func multiSignalObserveFiresOnAnyChange() {
     let a = Signal(1)
     let b = Signal("x")
     var received: [(Int, String)] = []
-    let disposable = observe(a, b, fireImmediately: false) { received.append(($0, $1)) }
+    let disposable = observe(a, b, fireImmediately: false) { a, b in received.append((a, b)) }
 
     a.set(2)
     #expect(received == [(2, "x")])
@@ -88,7 +88,7 @@ func multiSignalObserveFiresImmediately() {
     let a = Signal(1)
     let b = Signal("x")
     var received: [(Int, String)] = []
-    _ = observe(a, b) { received.append(($0, $1)) }
+    _ = observe(a, b) { a, b in received.append((a, b)) }
 
     #expect(received == [(1, "x")])
 }
