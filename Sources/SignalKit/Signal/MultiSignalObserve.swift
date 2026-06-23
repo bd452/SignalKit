@@ -1,32 +1,38 @@
 import Foundation
 
 @MainActor
-func makeMultiSignalInvoker<each Value>(
-    handler: @escaping (repeat each Value) -> Void,
-    signals: repeat Signal<each Value>
-) -> @MainActor () -> Void {
-    func invoke() {
+final class MultiSignalSubscription<each Value> {
+    private let handler: (repeat each Value) -> Void
+    private let signals: (repeat Signal<each Value>)
+
+    init(
+        handler: @escaping (repeat each Value) -> Void,
+        signals: repeat Signal<each Value>
+    ) {
+        self.handler = handler
+        self.signals = (repeat each signals)
+    }
+
+    func dispatch() {
         handler(repeat each (each signals).current)
     }
-    return invoke
-}
 
-@MainActor
-func subscribeToSignals<each Value>(
-    _ signals: repeat Signal<each Value>,
-    on delivery: ObserverDelivery,
-    fireImmediately: Bool,
-    invoke: @escaping @MainActor () -> Void
-) -> any Disposable {
-    if fireImmediately {
-        invoke()
+    func subscribe(
+        on delivery: ObserverDelivery,
+        fireImmediately: Bool,
+        invoke: (@escaping @MainActor () -> Void) -> @MainActor () -> Void = { $0 }
+    ) -> any Disposable {
+        let run = invoke { [self] in self.dispatch() }
+        if fireImmediately {
+            run()
+        }
+        var disposables: [any Disposable] = []
+        for signal in repeat each signals {
+            let disposable = signal.observe(on: delivery) { _ in run() }
+            disposables.append(disposable)
+        }
+        return CompositeDisposable(disposables)
     }
-    var disposables: [any Disposable] = []
-    for signal in repeat each signals {
-        let disposable = signal.observe(on: delivery) { _ in invoke() }
-        disposables.append(disposable)
-    }
-    return CompositeDisposable(disposables)
 }
 
 /// Runs a side effect whenever any of the given signals changes, passing each signal's
@@ -42,11 +48,6 @@ public func observe<each Value>(
     fireImmediately: Bool = true,
     _ handler: @escaping (repeat each Value) -> Void
 ) -> any Disposable {
-    let invoke = makeMultiSignalInvoker(handler: handler, signals: repeat each signals)
-    return subscribeToSignals(
-        repeat each signals,
-        on: delivery,
-        fireImmediately: fireImmediately,
-        invoke: invoke
-    )
+    MultiSignalSubscription(handler: handler, signals: repeat each signals)
+        .subscribe(on: delivery, fireImmediately: fireImmediately)
 }

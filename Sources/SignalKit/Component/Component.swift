@@ -121,20 +121,13 @@ open class Component: NSObject {
             )
         }
         let owner = String(describing: type(of: self))
-        let invoke = makeMultiSignalInvoker(handler: handler, signals: repeat each signals)
-        let guardedInvoke: @MainActor () -> Void = { [weak self] in
-            guard let self, let scope = self.scope else { return }
-            scope.guardAlive(owner: owner, invoke)
+        let subscription = MultiSignalSubscription(handler: handler, signals: repeat each signals)
+        let disposable = subscription.subscribe(on: .main, fireImmediately: fireImmediately) { invoke in
+            { [weak self] in
+                guard let self, let scope = self.scope else { return }
+                scope.guardAlive(owner: owner, invoke)
+            }
         }
-        if fireImmediately {
-            scope.guardAlive(owner: owner, invoke)
-        }
-        let disposable = subscribeToSignals(
-            repeat each signals,
-            on: .main,
-            fireImmediately: false,
-            invoke: guardedInvoke
-        )
         return scope.track(disposable)
     }
 
