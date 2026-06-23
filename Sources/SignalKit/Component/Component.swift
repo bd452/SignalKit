@@ -121,21 +121,19 @@ open class Component: NSObject {
             )
         }
         let owner = String(describing: type(of: self))
-        func dispatch(on component: Component) {
-            guard let scope = component.scope else { return }
-            scope.guardAlive(owner: owner) {
-                handler(repeat each (each signals).current)
-            }
+        let invoke = makeMultiSignalInvoker(handler: handler, signals: repeat each signals)
+        let guardedInvoke: @MainActor () -> Void = { [weak self] in
+            guard let self, let scope = self.scope else { return }
+            scope.guardAlive(owner: owner, invoke)
         }
-        let invoke: @MainActor () -> Void = { [weak self] in
-            guard let self else { return }
-            dispatch(on: self)
+        if fireImmediately {
+            scope.guardAlive(owner: owner, invoke)
         }
         let disposable = subscribeToSignals(
             repeat each signals,
             on: .main,
-            fireImmediately: fireImmediately,
-            invoke: invoke
+            fireImmediately: false,
+            invoke: guardedInvoke
         )
         return scope.track(disposable)
     }

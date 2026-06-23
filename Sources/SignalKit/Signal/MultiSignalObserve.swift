@@ -1,6 +1,17 @@
 import Foundation
 
 @MainActor
+func makeMultiSignalInvoker<each Value>(
+    handler: @escaping (repeat each Value) -> Void,
+    signals: repeat Signal<each Value>
+) -> @MainActor () -> Void {
+    func invoke() {
+        handler(repeat each (each signals).current)
+    }
+    return invoke
+}
+
+@MainActor
 func subscribeToSignals<each Value>(
     _ signals: repeat Signal<each Value>,
     on delivery: ObserverDelivery,
@@ -30,13 +41,11 @@ public func observe<each Value>(
     fireImmediately: Bool = true,
     _ handler: @escaping (repeat each Value) -> Void
 ) -> any Disposable {
-    func dispatch() {
-        handler(repeat each (each signals).current)
-    }
+    let invoke = makeMultiSignalInvoker(handler: handler, signals: repeat each signals)
     return subscribeToSignals(
         repeat each signals,
         on: delivery,
         fireImmediately: fireImmediately,
-        invoke: dispatch
+        invoke: invoke
     )
 }
