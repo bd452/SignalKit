@@ -1,76 +1,284 @@
 import Foundation
 
-@available(macOS 14, iOS 17, macCatalyst 17, *)
 @MainActor
-final class MultiSignalSubscription<each Value> {
-    private let handler: (repeat each Value) -> Void
-    private let signals: (repeat Signal<each Value>)
-
-    init(
-        handler: @escaping (repeat each Value) -> Void,
-        signals: repeat Signal<each Value>
-    ) {
-        self.handler = handler
-        self.signals = (repeat each signals)
-    }
-
-    func dispatch() {
-        handler(repeat each (each signals).current)
-    }
-
-    func subscribe(
-        on delivery: ObserverDelivery,
-        fireImmediately: Bool,
-        wrapInvoke: (@escaping @MainActor () -> Void) -> @MainActor () -> Void
-    ) -> any Disposable {
-        let run = wrapInvoke { [self] in self.dispatch() }
-        if fireImmediately {
-            run()
-        }
-        var disposables: [any Disposable] = []
-        for signal in repeat each signals {
-            let disposable = signal.observe(on: delivery) { _ in run() }
-            disposables.append(disposable)
-        }
-        return CompositeDisposable(disposables)
-    }
-}
-
-@available(macOS 14, iOS 17, macCatalyst 17, *)
-@MainActor
-func observeMultiSignal<each Value>(
-    _ signals: repeat Signal<each Value>,
+private func combineSignalObservers(
     on delivery: ObserverDelivery,
     fireImmediately: Bool,
-    wrapInvoke: (@escaping @MainActor () -> Void) -> @MainActor () -> Void,
-    _ handler: @escaping (repeat each Value) -> Void
+    invoke: @escaping @MainActor () -> Void,
+    observers: [any Disposable]
 ) -> any Disposable {
-    MultiSignalSubscription(handler: handler, signals: repeat each signals)
-        .subscribe(on: delivery, fireImmediately: fireImmediately, wrapInvoke: wrapInvoke)
+    if fireImmediately {
+        invoke()
+    }
+    return CompositeDisposable(observers)
 }
 
-/// Runs a side effect whenever any of the given signals changes, passing each signal's
-/// current value to the handler.
-///
-/// The handler receives the latest value from every signal, not only the one that changed.
-/// Returns a `Disposable` that unsubscribes from all signals.
+@MainActor
+private func observeSignal<Value>(
+    _ signal: Signal<Value>,
+    on delivery: ObserverDelivery,
+    invoke: @escaping @MainActor () -> Void
+) -> any Disposable {
+    signal.observe(on: delivery) { _ in invoke() }
+}
+
 @MainActor
 @discardableResult
-public func observe<each Value>(
-    _ signals: repeat Signal<each Value>,
+public func observe<A, B>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
     on delivery: ObserverDelivery = .immediate,
     fireImmediately: Bool = true,
-    _ handler: @escaping (repeat each Value) -> Void
+    _ handler: @escaping (A, B) -> Void
 ) -> any Disposable {
-    if #available(macOS 14, iOS 17, macCatalyst 17, *) {
-        return observeMultiSignal(
-            repeat each signals,
-            on: delivery,
-            fireImmediately: fireImmediately,
-            wrapInvoke: { $0 },
-            handler
-        )
-    } else {
-        fatalError("Multi-signal observe requires macOS 14 / iOS 17 or newer")
-    }
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E, F>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    _ f: Signal<F>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E, F) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current, f.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+            observeSignal(f, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E, F, G>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    _ f: Signal<F>,
+    _ g: Signal<G>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E, F, G) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current, f.current, g.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+            observeSignal(f, on: delivery, invoke: invoke),
+            observeSignal(g, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E, F, G, H>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    _ f: Signal<F>,
+    _ g: Signal<G>,
+    _ h: Signal<H>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E, F, G, H) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current, f.current, g.current, h.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+            observeSignal(f, on: delivery, invoke: invoke),
+            observeSignal(g, on: delivery, invoke: invoke),
+            observeSignal(h, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E, F, G, H, I>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    _ f: Signal<F>,
+    _ g: Signal<G>,
+    _ h: Signal<H>,
+    _ i: Signal<I>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E, F, G, H, I) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current, f.current, g.current, h.current, i.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+            observeSignal(f, on: delivery, invoke: invoke),
+            observeSignal(g, on: delivery, invoke: invoke),
+            observeSignal(h, on: delivery, invoke: invoke),
+            observeSignal(i, on: delivery, invoke: invoke),
+        ]
+    )
+}
+
+@MainActor
+@discardableResult
+public func observe<A, B, C, D, E, F, G, H, I, J>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
+    _ c: Signal<C>,
+    _ d: Signal<D>,
+    _ e: Signal<E>,
+    _ f: Signal<F>,
+    _ g: Signal<G>,
+    _ h: Signal<H>,
+    _ i: Signal<I>,
+    _ j: Signal<J>,
+    on delivery: ObserverDelivery = .immediate,
+    fireImmediately: Bool = true,
+    _ handler: @escaping (A, B, C, D, E, F, G, H, I, J) -> Void
+) -> any Disposable {
+    let invoke: @MainActor () -> Void = { handler(a.current, b.current, c.current, d.current, e.current, f.current, g.current, h.current, i.current, j.current) }
+    return combineSignalObservers(
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: invoke,
+        observers: [
+            observeSignal(a, on: delivery, invoke: invoke),
+            observeSignal(b, on: delivery, invoke: invoke),
+            observeSignal(c, on: delivery, invoke: invoke),
+            observeSignal(d, on: delivery, invoke: invoke),
+            observeSignal(e, on: delivery, invoke: invoke),
+            observeSignal(f, on: delivery, invoke: invoke),
+            observeSignal(g, on: delivery, invoke: invoke),
+            observeSignal(h, on: delivery, invoke: invoke),
+            observeSignal(i, on: delivery, invoke: invoke),
+            observeSignal(j, on: delivery, invoke: invoke),
+        ]
+    )
 }

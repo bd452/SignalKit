@@ -6,9 +6,9 @@ import PackageDescription
 let package = Package(
     name: "SignalKit",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14),
-        .macCatalyst(.v17),
+        .iOS(.v15),
+        .macOS(.v13),
+        .macCatalyst(.v15),
     ],
     products: [
         .library(

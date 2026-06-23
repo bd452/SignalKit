@@ -93,7 +93,7 @@ Component `bind` and `observe` always use `.main` delivery because UI mutation m
 
 ### Multi-signal observation
 
-Subscribe to several signals at once. The handler runs when **any** signal changes, with each signal's latest value. Any number of signals is supported:
+Subscribe to several signals at once. The handler runs when **any** signal changes, with each signal's latest value. Overloads are provided for two through ten signals:
 
 ```swift
 let disposable = observe(firstName, lastName) { first, last in
@@ -222,13 +222,17 @@ public final class Signal<Value> {
     ) -> any Disposable
 }
 
+@MainActor
 @discardableResult
-public func observe<each Value>(
-    _ signals: repeat Signal<each Value>,
+public func observe<A, B>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
     on delivery: ObserverDelivery = .immediate,
     fireImmediately: Bool = true,
-    _ handler: @escaping (repeat each Value) -> Void
+    _ handler: @escaping (A, B) -> Void
 ) -> any Disposable
+
+// ...and similarly through ten signals.
 ```
 
 ```swift

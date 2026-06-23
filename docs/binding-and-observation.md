@@ -263,11 +263,14 @@ func observe<Value>(
 ) -> any Disposable
 
 @discardableResult
-func observe<each Value>(
-    _ signals: repeat Signal<each Value>,
+func observe<A, B>(
+    _ a: Signal<A>,
+    _ b: Signal<B>,
     fireImmediately: Bool = true,
-    _ handler: @escaping (repeat each Value) -> Void
+    _ handler: @escaping (A, B) -> Void
 ) -> any Disposable
+
+// ...and similarly through ten signals.
 ```
 
 ## Related

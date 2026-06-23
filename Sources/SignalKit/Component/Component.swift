@@ -106,41 +106,6 @@ open class Component: NSObject {
         return scope.track(disposable)
     }
 
-    /// Runs a side effect whenever any of the given signals changes.
-    ///
-    /// The handler receives the latest value from every signal, not only the one that changed.
-    @discardableResult
-    public func observe<each Value>(
-        _ signals: repeat Signal<each Value>,
-        fireImmediately: Bool = true,
-        _ handler: @escaping (repeat each Value) -> Void
-    ) -> any Disposable {
-        guard let scope else {
-            preconditionFailure(
-                "observe(_:_:) must be called from build() while the component is mounting"
-            )
-        }
-        let owner = String(describing: type(of: self))
-        let disposable: any Disposable
-        if #available(macOS 14, iOS 17, macCatalyst 17, *) {
-            disposable = observeMultiSignal(
-                repeat each signals,
-                on: .main,
-                fireImmediately: fireImmediately,
-                wrapInvoke: { invoke in
-                    { [weak self] in
-                        guard let self, let scope = self.scope else { return }
-                        scope.guardAlive(owner: owner, invoke)
-                    }
-                },
-                handler
-            )
-        } else {
-            fatalError("Multi-signal observe requires macOS 14 / iOS 17 or newer")
-        }
-        return scope.track(disposable)
-    }
-
     @discardableResult
     public func bind<Target: AnyObject, Value>(
         _ target: Target,
