@@ -72,15 +72,19 @@ func multiSignalObserveFiresOnAnyChange() {
     let disposable = observe(a, b, fireImmediately: false) { a, b in received.append((a, b)) }
 
     a.set(2)
-    #expect(received == [(2, "x")])
+    #expect(received.count == 1)
+    #expect(received[0].0 == 2)
+    #expect(received[0].1 == "x")
 
     b.set("y")
-    #expect(received == [(2, "x"), (2, "y")])
+    #expect(received.count == 2)
+    #expect(received[1].0 == 2)
+    #expect(received[1].1 == "y")
 
     disposable.dispose()
     a.set(3)
     b.set("z")
-    #expect(received == [(2, "x"), (2, "y")])
+    #expect(received.count == 2)
 }
 
 @Test @MainActor
@@ -90,7 +94,9 @@ func multiSignalObserveFiresImmediately() {
     var received: [(Int, String)] = []
     _ = observe(a, b) { a, b in received.append((a, b)) }
 
-    #expect(received == [(1, "x")])
+    #expect(received.count == 1)
+    #expect(received[0].0 == 1)
+    #expect(received[0].1 == "x")
 }
 
 @Test @MainActor
@@ -99,13 +105,19 @@ func multiSignalObservePassesAllCurrentValues() {
     let b = Signal(2)
     let c = Signal(3)
     var received: [(Int, Int, Int)] = []
-    _ = observe(a, b, c, fireImmediately: false) { received.append(($0, $1, $2)) }
+    _ = observe(a, b, c, fireImmediately: false) { a, b, c in received.append((a, b, c)) }
 
     b.set(20)
-    #expect(received == [(1, 20, 3)])
+    #expect(received.count == 1)
+    #expect(received[0].0 == 1)
+    #expect(received[0].1 == 20)
+    #expect(received[0].2 == 3)
 
     a.set(10)
-    #expect(received == [(1, 20, 3), (10, 20, 3)])
+    #expect(received.count == 2)
+    #expect(received[1].0 == 10)
+    #expect(received[1].1 == 20)
+    #expect(received[1].2 == 3)
 }
 
 @Test @MainActor
