@@ -108,6 +108,25 @@ func multiSignalObservePassesAllCurrentValues() {
     #expect(received == [(1, 20, 3), (10, 20, 3)])
 }
 
+@Test @MainActor
+func multiSignalObserveSupportsManySignals() {
+    let a = Signal(1)
+    let b = Signal(2)
+    let c = Signal(3)
+    let d = Signal(4)
+    let e = Signal(5)
+    var callCount = 0
+    _ = observe(a, b, c, d, e, fireImmediately: false) { _, _, _, _, _ in
+        callCount += 1
+    }
+
+    e.set(50)
+    #expect(callCount == 1)
+
+    a.set(10)
+    #expect(callCount == 2)
+}
+
 #if canImport(UIKit)
 import UIKit
 

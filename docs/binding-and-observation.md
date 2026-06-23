@@ -263,30 +263,10 @@ func observe<Value>(
 ) -> any Disposable
 
 @discardableResult
-func observe<A, B>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
+func observe<each Value>(
+    _ signals: repeat Signal<each Value>,
     fireImmediately: Bool = true,
-    _ handler: @escaping (A, B) -> Void
-) -> any Disposable
-
-@discardableResult
-func observe<A, B, C>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
-    _ c: Signal<C>,
-    fireImmediately: Bool = true,
-    _ handler: @escaping (A, B, C) -> Void
-) -> any Disposable
-
-@discardableResult
-func observe<A, B, C, D>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
-    _ c: Signal<C>,
-    _ d: Signal<D>,
-    fireImmediately: Bool = true,
-    _ handler: @escaping (A, B, C, D) -> Void
+    _ handler: @escaping (repeat each Value) -> Void
 ) -> any Disposable
 ```
 

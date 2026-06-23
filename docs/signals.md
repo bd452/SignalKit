@@ -93,16 +93,20 @@ Component `bind` and `observe` always use `.main` delivery because UI mutation m
 
 ### Multi-signal observation
 
-Subscribe to several signals at once. The handler runs when **any** signal changes, with each signal's latest value:
+Subscribe to several signals at once. The handler runs when **any** signal changes, with each signal's latest value. Any number of signals is supported:
 
 ```swift
 let disposable = observe(firstName, lastName) { first, last in
     print("\(first) \(last)")
 }
+
+observe(a, b, c, d, e) { a, b, c, d, e in
+    print(a, b, c, d, e)
+}
 disposable.dispose()
 ```
 
-Overloads are available for two, three, or four signals. Use `fireImmediately: false` to skip the initial call.
+Use `fireImmediately: false` to skip the initial call.
 
 ### Observer identity
 
@@ -219,33 +223,11 @@ public final class Signal<Value> {
 }
 
 @discardableResult
-public func observe<A, B>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
+public func observe<each Value>(
+    _ signals: repeat Signal<each Value>,
     on delivery: ObserverDelivery = .immediate,
     fireImmediately: Bool = true,
-    _ handler: @escaping (A, B) -> Void
-) -> any Disposable
-
-@discardableResult
-public func observe<A, B, C>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
-    _ c: Signal<C>,
-    on delivery: ObserverDelivery = .immediate,
-    fireImmediately: Bool = true,
-    _ handler: @escaping (A, B, C) -> Void
-) -> any Disposable
-
-@discardableResult
-public func observe<A, B, C, D>(
-    _ a: Signal<A>,
-    _ b: Signal<B>,
-    _ c: Signal<C>,
-    _ d: Signal<D>,
-    on delivery: ObserverDelivery = .immediate,
-    fireImmediately: Bool = true,
-    _ handler: @escaping (A, B, C, D) -> Void
+    _ handler: @escaping (repeat each Value) -> Void
 ) -> any Disposable
 ```
 
