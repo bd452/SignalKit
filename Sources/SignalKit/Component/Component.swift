@@ -121,11 +121,15 @@ open class Component: NSObject {
             )
         }
         let owner = String(describing: type(of: self))
-        let invoke: @MainActor () -> Void = { [weak self] in
-            guard let self, let scope = self.scope else { return }
+        func dispatch(on component: Component) {
+            guard let scope = component.scope else { return }
             scope.guardAlive(owner: owner) {
                 handler(repeat each (each signals).current)
             }
+        }
+        let invoke: @MainActor () -> Void = { [weak self] in
+            guard let self else { return }
+            dispatch(on: self)
         }
         let disposable = subscribeToSignals(
             repeat each signals,

@@ -30,11 +30,13 @@ public func observe<each Value>(
     fireImmediately: Bool = true,
     _ handler: @escaping (repeat each Value) -> Void
 ) -> any Disposable {
-    subscribeToSignals(
-        repeat each signals,
-        on: delivery,
-        fireImmediately: fireImmediately
-    ) {
+    func dispatch() {
         handler(repeat each (each signals).current)
     }
+    return subscribeToSignals(
+        repeat each signals,
+        on: delivery,
+        fireImmediately: fireImmediately,
+        invoke: dispatch
+    )
 }
